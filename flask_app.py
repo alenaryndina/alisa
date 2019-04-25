@@ -5,6 +5,7 @@ import random
 
 app = Flask(__name__)
 import translate
+from geo import get_geo_info, get_distance
 
 logging.basicConfig(level=logging.INFO, filename='app.log',
                     format='%(asctime)s %(levelname)s %(name)s %(message)s')
@@ -82,7 +83,7 @@ def main_dialog(res, req):
                 res['response']['text'] = 'Отлично! Как твои дела?'
                 current_status = 'talk_alisa'
                 return
-            if req['request']['original_utterance'].lower() in ['Вопросы по городам']:
+            if req['request']['original_utterance'].lower() in ['вопросы по городам']:
                 current_dialog = "city"
                 res['response'][
                     'text'] = 'Отлично! Я могу сказать в какой стране город или сказать расстояние между городами!'

@@ -294,12 +294,8 @@ def get_cities(req):
 
 
 def get_first_name(req):
-    # перебираем сущности
     for entity in req['request']['nlu']['entities']:
-        # находим сущность с типом 'YANDEX.FIO'
         if entity['type'] == 'YANDEX.FIO':
-            # Если есть сущность с ключом 'first_name', то возвращаем ее значение.
-            # Во всех остальных случаях возвращаем None.
             return entity['value'].get('first_name', None)
 
 
