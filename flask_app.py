@@ -33,8 +33,11 @@ def main():
     return json.dumps(response)
 
 
+q_num = 0
+
+
 def main_dialog(res, req):
-    global current_status, current_dialog, Session_data
+    global current_status, current_dialog, Session_data, q_num
 
     user_id = req['session']['user_id']
     if current_dialog == "start":
@@ -45,29 +48,28 @@ def main_dialog(res, req):
                 'username': "Пользователь"
             }
 
-
             return
         if current_status == "start":
+            name = get_first_name(req)
+            if name  is None:
+                name = "Незнакомец"
+            Session_data[user_id]['username'] = name.title()
 
-            Session_data[user_id]['username'] = get_first_name(req).title()
             res['response']['text'] = 'Приятно познакомиться, ' + Session_data[user_id]['username']
             current_status = "start2"
 
             res['response']['buttons'] = get_suggests(user_id)
             return
         if current_status == "start2":
-            res['response']['text'] = Session_data[user_id]['username'] +'  О чем хочешь поговорить?'
+            res['response']['text'] = Session_data[user_id]['username'] + '  О чем хочешь поговорить?'
             current_status = "start_question"
-            Session_data[user_id] = {
-                'suggests': [
-                    "Просто поболтать.",
-                    "Переведи текст.",
-                    "Вопросы по городам",
-                    "Покажи города",
-                    "Тест по географии",
-                ],
-                'username': "Пользователь"
-            }
+            Session_data[user_id]['suggests'] = [
+                "Просто поболтать.",
+                "Переведи текст.",
+                "Вопросы по городам",
+                "Покажи города",
+                "Тест по географии",
+            ]
             Session_data[user_id]['quest'] = ['Как погода?', 'Как тебя зовут?', 'Тебе много лет?', 'Чем занимаешься?']
 
             res['response']['buttons'] = get_suggests(user_id)
@@ -82,7 +84,8 @@ def main_dialog(res, req):
                 return
             if req['request']['original_utterance'].lower() in ['Вопросы по городам']:
                 current_dialog = "city"
-                res['response']['text'] = 'Отлично! Я могу сказать в какой стране город или сказать расстояние между городами!'
+                res['response'][
+                    'text'] = 'Отлично! Я могу сказать в какой стране город или сказать расстояние между городами!'
                 current_status = 'NONE'
                 return
             if req['request']['original_utterance'].lower() in ['переведи текст.', 'переведи', 'переводчик',
@@ -90,9 +93,9 @@ def main_dialog(res, req):
                 current_dialog = "translite"
                 res['response']['text'] = 'Отлично! Что нужно перевести?'
                 Session_data[user_id]['suggests'] = [
-                        "Русский-английский",
-                        "Английский-русский"
-                    ]
+                    "Русский-английский",
+                    "Английский-русский"
+                ]
                 res['response']['text'] = Session_data[user_id]['username'] + '. Выбери язык'
                 res['response']['buttons'] = get_suggests(user_id)
                 current_status = 'start'
@@ -102,9 +105,6 @@ def main_dialog(res, req):
 
             if req['request']['original_utterance'].lower() in ['тест по географии', 'география', 'тест']:
                 current_dialog = "test"
-                res['response']['text'] = 'Отлично!'
-                Session_data[user_id]['suggests'] = [
-                    ]
                 res['response']['text'] = Session_data[user_id]['username'] + ',начинаем тест'
                 current_status = 1
                 current_dialog = 'test'
@@ -114,10 +114,10 @@ def main_dialog(res, req):
                 current_dialog = "gallery"
                 res['response']['text'] = 'Отлично!'
                 Session_data[user_id]['suggests'] = [
-                        "Тамбов",
-                        "Москва",
-                        "Воронеж"
-                    ]
+                    "Тамбов",
+                    "Москва",
+                    "Воронеж"
+                ]
                 res['response']['text'] = Session_data[user_id]['username'] + ', Какой город показать?'
                 res['response']['buttons'] = get_suggests(user_id)
                 current_status = 'start'
@@ -140,31 +140,33 @@ def main_dialog(res, req):
         test_dialog(res, req)
         return
 
+
 result = 0
 
+
 def test_dialog(res, req):
-    global current_status,current_dialog, Session_data, lang, result
+    global current_status, current_dialog, Session_data, lang, result
     user_id = req['session']['user_id']
-    quest = [(1,"Название науки «география» означает? ","Описание Земли"),
-             (2,"География как наука зародилась в Древнем(ей)?","Греции "),
-             (3,"Ближайшая к Солнцу планета? ","Меркурий "),
-             (4,"Легкий ветер, дующий на побережье и меняющий направление 2 раза в сутки? ","Бриз "),
-             (5,"Самая большая низменность на земном шаре?","Амазонская "),
-             (6,"Горы, разделяющие Европу и Азию? ","Уральские "),
-             (7,"Самые высокие горы на Земле? ","Гималаи"),
-             (8,"Земная кора и часть верхней мантии образуют? ","Литосферу"),
-             (9,"Географическая широта полюсов равна? ","90°"),
-             (10,"Химическая осадочная горная порода? ","Каменная соль ")]
-    var_answer = [[ "Описание Земли","Наука о почвах?","История Земли" ],
-                  [ "Египте","Персии","Греции "],
-                  [ "Венера","Меркурий ","Марс"],
-                  [ "Бриз ","Муссоны","Западные ветра"],
-                  [ "Прикаспийская","Амазонская ","Западно-Сибирская"],
-                  [ "Альпы","Гималаи","Уральские "],
-                  [ "Уральские","Гималаи","Альпы"],
-                  [ "Литосферу","Гидросферу","Атмосферу"],
-                  [ "120°","90°","180°"],
-                  [ "Кварцит ","Каменная соль ","Гранит"]]
+    quest = [(1, "Название науки «география» означает? ", "Описание Земли"),
+             (2, "География как наука зародилась в Древнем(ей)?", "Греции "),
+             (3, "Ближайшая к Солнцу планета? ", "Меркурий "),
+             (4, "Легкий ветер, дующий на побережье и меняющий направление 2 раза в сутки? ", "Бриз "),
+             (5, "Самая большая низменность на земном шаре?", "Амазонская "),
+             (6, "Горы, разделяющие Европу и Азию? ", "Уральские "),
+             (7, "Самые высокие горы на Земле? ", "Гималаи"),
+             (8, "Земная кора и часть верхней мантии образуют? ", "Литосферу"),
+             (9, "Географическая широта полюсов равна? ", "90°"),
+             (10, "Химическая осадочная горная порода? ", "Каменная соль ")]
+    var_answer = [["Описание Земли", "Наука о почвах?", "История Земли"],
+                  ["Египте", "Персии", "Греции "],
+                  ["Венера", "Меркурий ", "Марс"],
+                  ["Бриз ", "Муссоны", "Западные ветра"],
+                  ["Прикаспийская", "Амазонская ", "Западно-Сибирская"],
+                  ["Альпы", "Гималаи", "Уральские "],
+                  ["Уральские", "Гималаи", "Альпы"],
+                  ["Литосферу", "Гидросферу", "Атмосферу"],
+                  ["120°", "90°", "180°"],
+                  ["Кварцит ", "Каменная соль ", "Гранит"]]
 
     if current_status == len(quest) + 1:
         if current_status > 1:
@@ -177,59 +179,51 @@ def test_dialog(res, req):
     for i in range(len(quest)):
 
         if current_status == quest[i][0]:
-            if current_status>1:
-                if req['request']['original_utterance'] == quest[i-1][2]:
-                    result +=1
+            if current_status > 1:
+                if req['request']['original_utterance'] == quest[i - 1][2]:
+                    result += 1
 
-            res_text = "Вопрос "+str(i)+" из "+str(len(quest))+" ("+str(result)+")"
-            res['response']['text'] = quest[i][1]+ " "+res_text
+            res_text = "Вопрос " + str(i) + " из " + str(len(quest)) + " (" + str(result) + ")"
+            res['response']['text'] = quest[i][1] + " " + res_text
             Session_data[user_id]['suggests'] = var_answer[i]
             res['response']['buttons'] = get_suggests(user_id)
-            current_status +=1
-
+            current_status += 1
 
             return
 
     return
 
+
 def talk_dialog(res, req):
-    global current_status,current_dialog, Session_data, lang
+    global current_status, current_dialog, Session_data, lang, q_num
     user_id = req['session']['user_id']
-    if current_status == 'talk_name':
-        Session_data[user_id]['username'] = get_first_name(req).title()
-        res['response']['text'] = 'Приятно познакомиться, ' + Session_data[user_id]['username']
-        current_status = 'talk_alisa'
-        return
+
     if '?' in req['request']['original_utterance'].lower():
         current_status = 'talk_user'
     else:
         current_status = 'talk_alisa'
     if current_status == 'talk_alisa':
-        if len(Session_data[user_id]['quest']) < 1:
+        Session_data[user_id]['quest'] = ['Как погода?', 'Тебе много лет?',
+                                          'Чем занимаешься?', 'У тебя много друзей?',
+                                          'Что тебя может сильно рассмешить?',
+                                          'У тебя есть брат или сестра?', 'Чем занимаешься по жизни?',
+                                          'Какой твой любимый фильм??',
+                                          'Какое твое любимое блюдо?', 'Чего ты боишься больше всего?',
+                                          'С кем ты живешь?']
+        res['response']['text'] = Session_data[user_id]['quest'][q_num]
+        q_num += 1
+
+        if q_num >= len(Session_data[user_id]['quest']):
             res['response']['text'] = 'Не знаю, о чем еще спросить'
-            Session_data[user_id]['quest'] = ['Как погода?',  'Тебе много лет?',
-                                              'Чем занимаешься?', 'У тебя много друзей?', 'Что тебя может сильно рассмешить?',
-                                              'У тебя есть брат или сестра?', 'Чем занимаешься по жизни?', 'Какой твой любимый фильм??',
-                                              'Какое твое любимое блюдо?', 'Чего ты боишься больше всего?', 'С кем ты живешь?']
+
             current_dialog = "start"
-            current_status = "start_question"
-            Session_data[user_id]['suggests'] = [
-                "Переведи текст.",
-            ]
-            res['response']['buttons'] = get_suggests(user_id)
-            return
-        st_q = ['Интересно', 'Понятно', 'Ясно', 'Хорошо', 'Ммм', 'Неплохо', 'Хорошо']
-        c_q = random.choice(Session_data[user_id]['quest'])
-        Session_data[user_id]['quest'].remove(c_q)
-        if c_q == 'Как тебя зовут?':
-            current_status = 'talk_name'
-        res['response']['text'] = random.choice(st_q) + '. ' + c_q
+            current_status = "start2"
 
         return
 
     elif current_status == 'talk_user':
 
-        end_q = ['Что-нибудь еще спросишь?', 'Еще поговорим?', 'Мммм']
+        end_q = ['Что-нибудь еще спросишь?', 'Еще поговорим?', 'Что-то еще?']
         if 'погода' in req['request']['original_utterance'].lower():
             res['response']['text'] = 'Нормальная' + '. ' + random.choice(end_q)
             return
@@ -244,19 +238,15 @@ def talk_dialog(res, req):
     else:
         res['response']['text'] = 'Ты неразговорчивый. Что-нибудь хочешь?'
         current_dialog = "start"
-        current_status = "start_question"
-        Session_data[user_id] = [
-            "Просто поболтать.",
-            "Переведи текст.",
-        ]
-        res['response']['buttons'] = get_suggests(user_id)
+        current_status = "start2"
         return
+
 
 lang = "ru-en"
 
 
 def translite_dialog(res, req):
-    global current_status,current_dialog, Session_data, lang
+    global current_status, current_dialog, Session_data, lang
     user_id = req['session']['user_id']
     if current_status == "start":
         if req['request']['original_utterance'] == "Русский-английский":
@@ -270,20 +260,17 @@ def translite_dialog(res, req):
         return
 
     if 'хватит' in req['request']['original_utterance'].lower():
-        current_dialog= 'start'
+        current_dialog = 'start'
         res['response']['text'] = "Была рада помочь"
         current_status = 'end_translite'
         return
     if current_status == 'start_translite':
-        res['response']['text'] = "Перевод: "+ translate.translate(req['request']['original_utterance'], lang)[0]
+        res['response']['text'] = "Перевод: " + translate.translate(req['request']['original_utterance'], lang)[0]
         current_status = 'start_translite'
         return
 
 
-
-
 def gallery_dialog(res, req):
-
     global current_status, current_dialog, Session_data
     if current_dialog == "gallery":
         cities = {
@@ -324,14 +311,10 @@ def gallery_dialog(res, req):
         return
 
 
-
-
 def city_dialog(res, req):
-
     user_id = req['session']['user_id']
 
     if req['session']['new']:
-
         res['response']['text'] = 'Привет! Я могу сказать в какой стране город или сказать расстояние между городами!'
 
         return
@@ -357,7 +340,6 @@ def city_dialog(res, req):
 
 
 def get_cities(req):
-
     cities = []
 
     for entity in req['request']['nlu']['entities']:
@@ -368,8 +350,6 @@ def get_cities(req):
                 cities.append(entity['value']['city'])
 
     return cities
-
-
 
 
 def get_first_name(req):
