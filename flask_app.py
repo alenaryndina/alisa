@@ -247,6 +247,7 @@ lang = "ru-en"
 
 def translite_dialog(res, req):
     global current_status, current_dialog, Session_data, lang
+    logging.info(lang)
     user_id = req['session']['user_id']
     if current_status == "start":
         if req['request']['original_utterance'] == "Русский-английский":
@@ -262,7 +263,7 @@ def translite_dialog(res, req):
     if 'хватит' in req['request']['original_utterance'].lower():
         current_dialog = 'start'
         res['response']['text'] = "Была рада помочь"
-        current_status = 'end_translite'
+        current_status = 'start2'
         return
     if current_status == 'start_translite':
         res['response']['text'] = "Перевод: " + translate.translate(req['request']['original_utterance'], lang)[0]
@@ -353,12 +354,11 @@ def get_cities(req):
 
 
 def get_first_name(req):
-    # перебираем сущности
+
     for entity in req['request']['nlu']['entities']:
-        # находим сущность с типом 'YANDEX.FIO'
+
         if entity['type'] == 'YANDEX.FIO':
-            # Если есть сущность с ключом 'first_name', то возвращаем ее значение.
-            # Во всех остальных случаях возвращаем None.
+
             return entity['value'].get('first_name', None)
 
 
